@@ -146,3 +146,57 @@ body {
 .badge-mock { background: rgba(248,81,73,0.1); color: var(--peak); border: 1px solid rgba(248,81,73,0.3); }
 .chart-date { font-size: 0.7rem; color: var(--text); font-family: var(--font); }
 .chart-range { font-size: 0.7rem; color: var(--text); font-family: var(--font); margin-left: auto; }
+
+/* third additions */
+.load-cap-row {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+.load-cap-label {
+  font-size: 0.75rem;
+  color: var(--text2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.35rem;
+}
+.load-cap-hint {
+  font-size: 0.65rem;
+  color: var(--text2);
+  opacity: 0.7;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.savings-banner {
+  background: rgba(63,185,80,0.08);
+  border: 1px solid rgba(63,185,80,0.25);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--accent2);
+}
+
+.accent-savings { border-color: rgba(63,185,80,0.3) !important; }
+.savings-value { color: var(--accent2) !important; }
+
+.dr-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
+.dr-savings-badge {
+  font-family: var(--font);
+  font-size: 0.65rem;
+  background: rgba(63,185,80,0.12);
+  color: var(--accent2);
+  border: 1px solid rgba(63,185,80,0.3);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+.dr-was { color: var(--text2); text-decoration: line-through; opacity: 0.6; }
+
+.load-info {
+  font-size: 0.65rem;
+  color: var(--text2);
+  font-family: var(--font);
+  padding-top: 0.25rem;
+}

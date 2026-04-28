@@ -1,10 +1,10 @@
 import { useState } from "react";
 
 const PRESETS = [
-  { name: "EV Charger", energy_kwh: 40, duration_hours: 8, earliest_start: 0, latest_end: 8 },
-  { name: "Dishwasher", energy_kwh: 1.5, duration_hours: 2, earliest_start: 19, latest_end: 24 },
-  { name: "Washing Machine", energy_kwh: 2.0, duration_hours: 1, earliest_start: 0, latest_end: 8 },
-  { name: "Dryer", energy_kwh: 5.0, duration_hours: 1, earliest_start: 6, latest_end: 22 },
+  { name: "EV Charger",      energy_kwh: 40,  duration_hours: 8, earliest_start: 0,  latest_end: 8  },
+  { name: "Dishwasher",      energy_kwh: 1.5, duration_hours: 2, earliest_start: 19, latest_end: 24 },
+  { name: "Washing Machine", energy_kwh: 2.0, duration_hours: 1, earliest_start: 0,  latest_end: 8  },
+  { name: "Dryer",           energy_kwh: 5.0, duration_hours: 1, earliest_start: 6,  latest_end: 22 },
 ];
 
 function toHHMM(hour) {
@@ -14,6 +14,7 @@ function toHHMM(hour) {
 
 export default function DeviceForm({ onSubmit, loading }) {
   const [devices, setDevices] = useState([{ ...PRESETS[0] }]);
+  const [maxLoadKw, setMaxLoadKw] = useState(20);
 
   function addPreset(preset) {
     setDevices((d) => [...d, { ...preset }]);
@@ -26,14 +27,16 @@ export default function DeviceForm({ onSubmit, loading }) {
   function updateDevice(i, field, value) {
     setDevices((d) =>
       d.map((dev, idx) =>
-        idx === i ? { ...dev, [field]: field === "name" ? value : Number(value) } : dev
+        idx === i
+          ? { ...dev, [field]: field === "name" ? value : Number(value) }
+          : dev
       )
     );
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    onSubmit(devices);
+    onSubmit(devices, maxLoadKw);
   }
 
   return (
@@ -63,9 +66,7 @@ export default function DeviceForm({ onSubmit, loading }) {
                 Energy needed
                 <div className="input-unit">
                   <input
-                    type="number"
-                    min="0.1"
-                    step="0.1"
+                    type="number" min="0.1" step="0.1"
                     value={dev.energy_kwh}
                     onChange={(e) => updateDevice(i, "energy_kwh", e.target.value)}
                     required
@@ -77,9 +78,7 @@ export default function DeviceForm({ onSubmit, loading }) {
                 Must run for
                 <div className="input-unit">
                   <input
-                    type="number"
-                    min="1"
-                    max="24"
+                    type="number" min="1" max="24"
                     value={dev.duration_hours}
                     onChange={(e) => updateDevice(i, "duration_hours", e.target.value)}
                     required
@@ -91,9 +90,7 @@ export default function DeviceForm({ onSubmit, loading }) {
                 Earliest start
                 <div className="input-unit">
                   <input
-                    type="number"
-                    min="0"
-                    max="23"
+                    type="number" min="0" max="23"
                     value={dev.earliest_start}
                     onChange={(e) => updateDevice(i, "earliest_start", e.target.value)}
                     required
@@ -105,9 +102,7 @@ export default function DeviceForm({ onSubmit, loading }) {
                 Must finish by
                 <div className="input-unit">
                   <input
-                    type="number"
-                    min="1"
-                    max="24"
+                    type="number" min="1" max="24"
                     value={dev.latest_end}
                     onChange={(e) => updateDevice(i, "latest_end", e.target.value)}
                     required
@@ -118,6 +113,8 @@ export default function DeviceForm({ onSubmit, loading }) {
             </div>
             <div className="device-window-hint">
               Window: {toHHMM(dev.earliest_start)} → {toHHMM(dev.latest_end)}
+              &nbsp;·&nbsp;
+              Power: {dev.power_kw ?? (dev.energy_kwh / dev.duration_hours).toFixed(2)} kW
             </div>
           </div>
         ))}
@@ -126,15 +123,31 @@ export default function DeviceForm({ onSubmit, loading }) {
       <div className="preset-row">
         <span className="preset-label">Add preset:</span>
         {PRESETS.map((p) => (
-          <button
-            key={p.name}
-            type="button"
-            className="preset-btn"
-            onClick={() => addPreset(p)}
-          >
+          <button key={p.name} type="button" className="preset-btn" onClick={() => addPreset(p)}>
             + {p.name}
           </button>
         ))}
+      </div>
+
+      <div className="load-cap-row">
+        <label className="load-cap-label">
+          Household load cap
+          <div className="input-unit">
+            <input
+              type="number"
+              min="1"
+              max="100"
+              step="0.5"
+              value={maxLoadKw}
+              onChange={(e) => setMaxLoadKw(Number(e.target.value))}
+            />
+            <span>kW max simultaneous</span>
+          </div>
+        </label>
+        <p className="load-cap-hint">
+          Prevents devices from running at the same time if their combined draw exceeds this.
+          Typical home service: 20–25 kW.
+        </p>
       </div>
 
       <button type="submit" className="optimize-btn" disabled={loading}>

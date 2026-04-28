@@ -21,11 +21,11 @@ export default function App() {
       .catch(() => setPriceError("Could not load prices — is the backend running?"));
   }, [useLive]);
 
-  async function handleOptimize(devices) {
+  async function handleOptimize(devices, maxLoadKw) {
     setLoading(true);
     setError(null);
     try {
-      const data = await runOptimize(devices, useLive);
+      const data = await runOptimize(devices, useLive, maxLoadKw);
       setResult(data);
     } catch (e) {
       setError(e.message);
@@ -54,7 +54,7 @@ export default function App() {
               />
               Live prices
             </label>
-            <div className="header-badge">Phase 2 · ISO-NE Data</div>
+            <div className="header-badge">Phase 3 · Load Aware</div>
           </div>
         </div>
       </header>
@@ -82,7 +82,7 @@ export default function App() {
           <section className="section">
             <h2 className="section-title">Your Devices</h2>
             <p className="section-desc">
-              Enter each device's energy need and the window it's allowed to run in.
+              Set each device's energy need, run duration, and allowed time window.
             </p>
             <DeviceForm onSubmit={handleOptimize} loading={loading} />
             {error && <div className="error-box">{error}</div>}
@@ -101,7 +101,7 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        GridOptima · Phase 2 · ISO New England day-ahead LMP · Greedy optimizer
+        GridOptima · Phase 3 · ISO New England day-ahead LMP · Load-aware greedy optimizer
       </footer>
     </div>
   );

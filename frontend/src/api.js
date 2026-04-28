@@ -6,11 +6,15 @@ export async function fetchPrices(live = true) {
   return res.json();
 }
 
-export async function runOptimize(devices, useLivePrices = true) {
+export async function runOptimize(devices, useLivePrices = true, maxLoadKw = 10) {
   const res = await fetch(`${BASE_URL}/optimize`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ devices, use_live_prices: useLivePrices }),
+    body: JSON.stringify({
+      devices,
+      use_live_prices: useLivePrices,
+      max_load_kw: maxLoadKw,
+    }),
   });
   if (!res.ok) {
     const err = await res.json();

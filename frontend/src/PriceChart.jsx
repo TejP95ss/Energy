@@ -23,7 +23,7 @@ export default function PriceChart({ prices, schedule, source, date, isFallback 
     <div className="price-chart">
       <div className="chart-meta">
         <span className={`source-badge ${isFallback ? "badge-mock" : "badge-live"}`}>
-          {isFallback ? "⚠ Mock data" : "● Live ISO-NE"}
+          {isFallback ? "⚠ Mock data" : "● ISO-NE Predictions"}
         </span>
         {date && <span className="chart-date">{date}</span>}
         <span className="chart-range">
