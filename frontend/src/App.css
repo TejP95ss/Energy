@@ -58,15 +58,15 @@ body {
 .app-footer { text-align: center; padding: 1.5rem; font-size: 0.7rem; color: var(--text2); border-top: 1px solid var(--border); font-family: var(--font); }
 
 /* ---- Price Chart ---- */
-.price-chart { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem 1rem 0.75rem; }
-.chart-bars { display: flex; align-items: flex-end; gap: 2px; height: 120px; }
+.price-chart { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem 1rem 0.75rem; }
+.chart-bars { display: flex; align-items: flex-end; gap: 2px; height: 250px; }
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; height: 100%; justify-content: flex-end; }
-.bar-value { font-size: 0.45rem; color: var(--text2); font-family: var(--font); }
+.bar-value { font-size: 0.53rem; color: var(--text); font-family: var(--font); }
 .bar { width: 100%; border-radius: 2px 2px 0 0; transition: opacity 0.2s; cursor: default; }
 .bar-low { background: var(--accent2); opacity: 0.6; }
 .bar-peak { background: var(--peak); opacity: 0.7; }
 .bar-scheduled { opacity: 1 !important; outline: 2px solid var(--scheduled); }
-.bar-label { font-size: 0.4rem; color: var(--text2); font-family: var(--font); white-space: nowrap; }
+.bar-label { font-size: 0.5rem; color: var(--text); font-family: var(--font); white-space: nowrap; }
 .chart-legend { display: flex; gap: 1rem; justify-content: flex-end; padding-top: 0.5rem; font-size: 0.65rem; color: var(--text2); align-items: center; }
 .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 3px; }
 .dot-low { background: var(--accent2); }
@@ -122,3 +122,27 @@ body {
 .empty-state strong { color: var(--text); }
 
 .error-box { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.4); color: var(--peak); padding: 0.6rem 0.9rem; border-radius: 6px; font-size: 0.8rem; margin-top: 0.5rem; font-family: var(--font); }
+
+/* second additions */
+.header-right { display: flex; align-items: center; gap: 0.75rem; }
+
+.toggle-label {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.7rem; color: var(--text2); cursor: pointer;
+  font-family: var(--font);
+}
+.toggle-label input { accent-color: var(--accent); cursor: pointer; }
+
+.chart-meta {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 0.75rem; flex-wrap: wrap;
+}
+.source-badge {
+  font-family: var(--font); font-size: 0.65rem;
+  padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 500;
+}
+
+.badge-live { background: rgba(63,185,80,0.15); color: var(--accent2); border: 1px solid rgba(63,185,80,0.3); }
+.badge-mock { background: rgba(248,81,73,0.1); color: var(--peak); border: 1px solid rgba(248,81,73,0.3); }
+.chart-date { font-size: 0.7rem; color: var(--text); font-family: var(--font); }
+.chart-range { font-size: 0.7rem; color: var(--text); font-family: var(--font); margin-left: auto; }
