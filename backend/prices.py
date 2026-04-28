@@ -23,14 +23,71 @@ MOCK_PRICES: list[float] = [
 ]
 
 
-def _build_url(date: datetime.date) -> str:
-    """Day-ahead LMP endpoint for a given date."""
-    d = date.strftime("%Y%m%d")
-    return (
-        f"https://webservices.iso-ne.com/api/v1.1/dalocationalmarginalprice"
-        f"/day/{d}/location/{NEMASSBOST_NODE}"
-    )
+def _read_from_db(date: datetime.date, node: str) -> list[float] | None:
+    """Return 24 sorted prices from DB, or None if not cached / DB unavailable."""
+    try:
+        from database import cursor
+        with cursor() as cur:
+            cur.execute("""
+                SELECT hour, price_cents
+                FROM hourly_prices
+                WHERE price_date = %s AND node = %s
+                ORDER BY hour
+            """, (date, node))
+            rows = cur.fetchall()
+        if len(rows) == 24:
+            return [float(r["price_cents"]) for r in rows]
+        return None
+    except Exception as e:
+        print(f"[prices] DB read skipped: {e}")
+        return None
 
+
+def _write_to_db(date: datetime.date, node: str, prices: list[float], source: str):
+    """Insert 24 hourly prices. ON CONFLICT DO NOTHING avoids duplicate errors."""
+    try:
+        from database import cursor
+        with cursor() as cur:
+            for hour, price in enumerate(prices):
+                cur.execute("""
+                    INSERT INTO hourly_prices (price_date, hour, node, price_cents, source)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (price_date, hour, node) DO NOTHING
+                """, (date, hour, node, price, source))
+        print(f"[prices] Cached {len(prices)} prices to DB for {date}")
+    except Exception as e:
+        print(f"[prices] DB write skipped: {e}")
+
+
+def _read_date_range_from_db(
+    node: str, days: int = 7
+) -> dict[str, list[float]]:
+    """
+    Return a dict of {date_str: [24 prices]} for the past `days` days.
+    Used by the /prices/history endpoint.
+    """
+    try:
+        from database import cursor
+        with cursor() as cur:
+            cur.execute("""
+                SELECT price_date, hour, price_cents
+                FROM hourly_prices
+                WHERE node = %s
+                  AND price_date >= CURRENT_DATE - INTERVAL '%s days'
+                ORDER BY price_date, hour
+            """, (node, days))
+            rows = cur.fetchall()
+
+        result: dict[str, list] = {}
+        for row in rows:
+            key = row["price_date"].isoformat()
+            result.setdefault(key, []).append(float(row["price_cents"]))
+        # Only return complete days
+        return {k: v for k, v in result.items() if len(v) == 24}
+    except Exception as e:
+        print(f"[prices] DB history read skipped: {e}")
+        return {}
+    
 def _fetch_iso_ne(date: datetime.date) -> list[float]:
     """
     Fetch 24 hourly day-ahead report LMPs from ISO-NE CSV link. Returns prices in ¢/kWh.
@@ -110,8 +167,22 @@ def get_prices(live: bool = True) -> dict:
     today = datetime.date.today()
 
     if live:
+        cached = _read_from_db(today, NEMASSBOST_NODE)
+        if cached:
+            print("[prices] Serving from DB cache")
+            return {
+                "source": "iso_ne_cached",
+                "node": NEMASSBOST_NODE,
+                "date": today.isoformat(),
+                "unit": "cents_per_kwh",
+                "hours": list(range(24)),
+                "prices": cached,
+                "fallback": False,
+            }
+        
         try:
             prices = _fetch_iso_ne(today)
+            _write_to_db(today, NEMASSBOST_NODE, prices, source="iso_ne_csv")
             return {
                 "source": "iso_ne_live",
                 "node": NEMASSBOST_NODE,
@@ -122,7 +193,6 @@ def get_prices(live: bool = True) -> dict:
                 "fallback": False,
             }
         except Exception as exc:
-            # Log but don't crash — fall through to mock
             print(f"[prices] ISO-NE fetch failed ({type(exc).__name__}: {exc}), using mock")
 
     return {
@@ -134,6 +204,10 @@ def get_prices(live: bool = True) -> dict:
         "prices": MOCK_PRICES,
         "fallback": True,
     }
+
+def get_price_history(days: int = 7) -> dict:
+    """Return cached prices for the past N days, keyed by date string."""
+    return _read_date_range_from_db(NEMASSBOST_NODE, days)
 
 
 if __name__ == "__main__":

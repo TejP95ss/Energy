@@ -3,12 +3,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional
 from optimizer import Device, optimize
-from prices import get_prices, MOCK_PRICES
+from prices import get_prices, get_price_history, MOCK_PRICES
+from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+load_dotenv()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        from database import init_db
+        init_db()
+    except Exception as e:
+        print(f"[startup] DB init skipped: {e}")
+    yield
 
 app = FastAPI(
     title="House Energy Optimizer API",
     description="ISO New England energy scheduler",
-    version="0.2.0",
+    version="0.3.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -75,6 +88,20 @@ def health():
 @app.get("/prices", summary="Get hourly electricity prices")
 def fetch_prices(live: bool = Query(True, description="Fetch from ISO-NE (false = mock)")):
     return get_prices(live=live)
+
+@app.get("/prices/history")
+def price_history(days: int = Query(7, ge=1, le=30)):
+    """
+    Return cached day-ahead prices for the past N days.
+    Only returns days that are fully stored in the DB (all 24 hours).
+    """
+    history = get_price_history(days=days)
+    return {
+        "node": ".Z.NEMASSBOST",
+        "days_requested": days,
+        "days_available": len(history),
+        "history": history,
+    }
 
 
 @app.post("/optimize", response_model=OptimizeResponse, summary="Optimize device schedule")
