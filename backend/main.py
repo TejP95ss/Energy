@@ -1,13 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional
-from optimizer import Device, optimize, MOCK_PRICES_CENTS
+from optimizer import Device, optimize
+from prices import get_prices, MOCK_PRICES
 
 app = FastAPI(
     title="House Energy Optimizer API",
-    description="ISO New England greedy energy scheduler (Phase 1)",
-    version="0.1.0",
+    description="ISO New England energy scheduler",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -18,7 +19,7 @@ app.add_middleware(
 )
 
 
-# Pydantic schemas
+# Schemas
 class DeviceInput(BaseModel):
     name: str = Field(..., example="EV Charger")
     energy_kwh: float = Field(..., gt=0, example=40.0)
@@ -40,7 +41,7 @@ class DeviceInput(BaseModel):
 
 class OptimizeRequest(BaseModel):
     devices: list[DeviceInput] = Field(..., min_length=1)
-    use_mock_prices: bool = Field(True, description="Use hardcoded ISO-NE mock prices")
+    use_live_prices: bool = Field(True, description="Fetch real ISO-NE prices")
 
 
 class ScheduledDeviceOut(BaseModel):
@@ -54,6 +55,10 @@ class ScheduledDeviceOut(BaseModel):
 
 
 class OptimizeResponse(BaseModel):
+    price_source: str
+    price_date: str
+    price_node: str
+    is_fallback: bool
     prices_cents_per_kwh: list[float]
     schedule: list[ScheduledDeviceOut]
     total_cost_cents: float
@@ -64,22 +69,18 @@ class OptimizeResponse(BaseModel):
 # Endpoints
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "0.1.0"}
+    return {"status": "ok", "version": "0.2.0"}
 
 
-@app.get("/prices", summary="Get current mock hourly prices")
-def get_prices():
-    return {
-        "source": "mock_iso_ne",
-        "unit": "cents_per_kwh",
-        "hours": list(range(24)),
-        "prices": MOCK_PRICES_CENTS,
-    }
+@app.get("/prices", summary="Get hourly electricity prices")
+def fetch_prices(live: bool = Query(True, description="Fetch from ISO-NE (false = mock)")):
+    return get_prices(live=live)
 
 
 @app.post("/optimize", response_model=OptimizeResponse, summary="Optimize device schedule")
 def run_optimize(req: OptimizeRequest):
-    prices = MOCK_PRICES_CENTS  #will later fetch real ISO-NE prices
+    price_data = get_prices(live=req.use_live_prices)
+    prices = price_data["prices"]
 
     devices = [
         Device(
@@ -98,4 +99,10 @@ def run_optimize(req: OptimizeRequest):
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-    return result
+    return {
+        "price_source": price_data["source"],
+        "price_date": price_data["date"],
+        "price_node": price_data["node"],
+        "is_fallback": price_data["fallback"],
+        **result,
+    }
