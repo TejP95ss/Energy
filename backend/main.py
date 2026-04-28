@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional
 from optimizer import Device, optimize
-from prices import get_prices, get_price_history, MOCK_PRICES
+from prices import get_prices, get_price_history
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 load_dotenv()
@@ -20,8 +20,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="House Energy Optimizer API",
     description="ISO New England energy scheduler",
-    version="0.3.0",
-    lifespan=lifespan
+    version="0.4.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -32,13 +32,12 @@ app.add_middleware(
 )
 
 
-# Schemas
 class DeviceInput(BaseModel):
     name: str = Field(..., example="EV Charger")
-    energy_kwh: float = Field(..., gt=0, example=40.0)
-    duration_hours: int = Field(..., ge=1, le=24, example=8)
-    earliest_start: int = Field(..., ge=0, le=23, example=0)
-    latest_end: int = Field(..., ge=1, le=24, example=8)
+    energy_kwh: float = Field(..., gt=0)
+    duration_hours: int = Field(..., ge=1, le=24)
+    earliest_start: int = Field(..., ge=0, le=23)
+    latest_end: int = Field(..., ge=1, le=24)
     power_kw: Optional[float] = Field(None, gt=0)
 
     @model_validator(mode="after")
@@ -54,7 +53,8 @@ class DeviceInput(BaseModel):
 
 class OptimizeRequest(BaseModel):
     devices: list[DeviceInput] = Field(..., min_length=1)
-    use_live_prices: bool = Field(True, description="Fetch real ISO-NE prices")
+    use_live_prices: bool = Field(True)
+    max_load_kw: float = Field(20.0, gt=0, le=100)
 
 
 class ScheduledDeviceOut(BaseModel):
@@ -65,6 +65,8 @@ class ScheduledDeviceOut(BaseModel):
     power_kw: float
     energy_kwh: float
     cost_cents: float
+    unoptimized_cost_cents: float
+    savings_cents: float
 
 
 class OptimizeResponse(BaseModel):
@@ -73,28 +75,27 @@ class OptimizeResponse(BaseModel):
     price_node: str
     is_fallback: bool
     prices_cents_per_kwh: list[float]
+    max_load_kw: float
     schedule: list[ScheduledDeviceOut]
     total_cost_cents: float
     total_cost_dollars: float
+    total_unoptimized_cost_dollars: float
+    total_savings_cents: float
+    total_savings_dollars: float
     total_energy_kwh: float
 
 
-# Endpoints
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "0.2.0"}
+    return {"status": "ok", "version": "0.4.0"}
 
 
-@app.get("/prices", summary="Get hourly electricity prices")
-def fetch_prices(live: bool = Query(True, description="Fetch from ISO-NE (false = mock)")):
+@app.get("/prices")
+def fetch_prices(live: bool = Query(True)):
     return get_prices(live=live)
 
 @app.get("/prices/history")
 def price_history(days: int = Query(7, ge=1, le=30)):
-    """
-    Return cached day-ahead prices for the past N days.
-    Only returns days that are fully stored in the DB (all 24 hours).
-    """
     history = get_price_history(days=days)
     return {
         "node": ".Z.NEMASSBOST",
@@ -104,7 +105,7 @@ def price_history(days: int = Query(7, ge=1, le=30)):
     }
 
 
-@app.post("/optimize", response_model=OptimizeResponse, summary="Optimize device schedule")
+@app.post("/optimize", response_model=OptimizeResponse)
 def run_optimize(req: OptimizeRequest):
     price_data = get_prices(live=req.use_live_prices)
     prices = price_data["prices"]
@@ -122,7 +123,7 @@ def run_optimize(req: OptimizeRequest):
     ]
 
     try:
-        result = optimize(devices, prices)
+        result = optimize(devices, prices, max_load_kw=req.max_load_kw)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
