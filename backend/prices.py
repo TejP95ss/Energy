@@ -11,7 +11,7 @@ import datetime
 import urllib.request
 import json
 import csv
-import io
+from database import cursor
 
 NEMASSBOST_NODE = ".Z.NEMASSBOST"
 
@@ -23,30 +23,41 @@ MOCK_PRICES: list[float] = [
 ]
 
 
-def _read_from_db(date: datetime.date, node: str) -> list[float] | None:
-    """Return 24 sorted prices from DB, or None if not cached / DB unavailable."""
-    try:
-        from database import cursor
-        with cursor() as cur:
-            cur.execute("""
-                SELECT hour, price_cents
-                FROM hourly_prices
-                WHERE price_date = %s AND node = %s
-                ORDER BY hour
-            """, (date, node))
-            rows = cur.fetchall()
-        if len(rows) == 24:
-            return [float(r["price_cents"]) for r in rows]
-        return None
-    except Exception as e:
-        print(f"[prices] DB read skipped: {e}")
-        return None
+def _read_from_db(date: datetime.date, node: str) -> dict | None:
+    """
+    Try reading cached prices for (date+1) first, then date.
+    Returns {"date": iso_str, "prices": [...]} or None.
+    """
+    dates_to_try = [date + datetime.timedelta(days=1), date]
+
+    for d in dates_to_try:
+        try:
+            with cursor() as cur:
+                cur.execute("""
+                    SELECT hour, price_cents
+                    FROM hourly_prices
+                    WHERE price_date = %s AND node = %s
+                    ORDER BY hour
+                """, (d, node))
+                rows = cur.fetchall()
+
+            if len(rows) == 24:
+                prices = [float(r["price_cents"]) for r in rows]
+                print(f"[prices] DB hit for {d}")
+                return {
+                    "date": d.isoformat(),
+                    "prices": prices
+                }
+
+        except Exception as e:
+            print(f"[prices] DB read skipped for {d}: {e}")
+
+    return None
 
 
 def _write_to_db(date: datetime.date, node: str, prices: list[float], source: str):
     """Insert 24 hourly prices. ON CONFLICT DO NOTHING avoids duplicate errors."""
     try:
-        from database import cursor
         with cursor() as cur:
             for hour, price in enumerate(prices):
                 cur.execute("""
@@ -59,15 +70,12 @@ def _write_to_db(date: datetime.date, node: str, prices: list[float], source: st
         print(f"[prices] DB write skipped: {e}")
 
 
-def _read_date_range_from_db(
-    node: str, days: int = 7
-) -> dict[str, list[float]]:
+def _read_date_range_from_db(node: str, days: int = 7) -> dict[str, list[float]]:
     """
     Return a dict of {date_str: [24 prices]} for the past `days` days.
     Used by the /prices/history endpoint.
     """
     try:
-        from database import cursor
         with cursor() as cur:
             cur.execute("""
                 SELECT price_date, hour, price_cents
@@ -88,7 +96,7 @@ def _read_date_range_from_db(
         print(f"[prices] DB history read skipped: {e}")
         return {}
     
-def _fetch_iso_ne(date: datetime.date) -> list[float]:
+def _fetch_iso_ne(date: datetime.date) -> dict:
     """
     Fetch 24 hourly day-ahead report LMPs from ISO-NE CSV link. Returns prices in ¢/kWh.
     the data is from https://www.iso-ne.com/isoexpress/web/reports/pricing/-/tree/lmps-da-hourly
@@ -113,6 +121,7 @@ def _fetch_iso_ne(date: datetime.date) -> list[float]:
 
             header = None
             prices = []
+            data_date = None
 
             for line in lines:
                 row = next(csv.reader([line]))
@@ -136,6 +145,8 @@ def _fetch_iso_ne(date: datetime.date) -> list[float]:
 
                     # Exact match (robust)
                     if loc.upper() == NEMASSBOST_NODE:
+                        if data_date is None:
+                            data_date = datetime.datetime.strptime(row_dict["Date"], "%m/%d/%Y").date()
                         hour = int(row_dict["Hour Ending"]) - 1
                         lmp = float(row_dict["Locational Marginal Price"])  # $/MWh
 
@@ -152,7 +163,7 @@ def _fetch_iso_ne(date: datetime.date) -> list[float]:
                 raise ValueError(f"Expected 24 prices, got {len(hourly)}")
 
             print(f"[prices] SUCCESS using {url}")
-            return hourly
+            return {"date": data_date.isoformat(), "prices": hourly}
 
         except Exception as e:
             print(f"[prices] Failed for {d}: {type(e).__name__}: {e}")
@@ -173,20 +184,22 @@ def get_prices(live: bool = True) -> dict:
             return {
                 "source": "iso_ne_cached",
                 "node": NEMASSBOST_NODE,
-                "date": today.isoformat(),
+                "date": cached["date"],
                 "unit": "cents_per_kwh",
                 "hours": list(range(24)),
-                "prices": cached,
+                "prices": cached["prices"],
                 "fallback": False,
             }
         
         try:
-            prices = _fetch_iso_ne(today)
-            _write_to_db(today, NEMASSBOST_NODE, prices, source="iso_ne_csv")
+            date_price_dict = _fetch_iso_ne(today)
+            date = date_price_dict["date"]
+            prices = date_price_dict["prices"]
+            _write_to_db(date, NEMASSBOST_NODE, prices, source="iso_ne_csv")
             return {
                 "source": "iso_ne_live",
                 "node": NEMASSBOST_NODE,
-                "date": today.isoformat(),
+                "date": date,
                 "unit": "cents_per_kwh",
                 "hours": list(range(24)),
                 "prices": prices,

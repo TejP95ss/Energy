@@ -12,16 +12,16 @@ import psycopg2
 import psycopg2.extras
 from contextlib import contextmanager
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
-
-
 def get_conn():
-    if not DATABASE_URL:
+    database_url = os.environ.get("DATABASE_URL")
+
+    if not database_url:
         raise RuntimeError(
             "DATABASE_URL environment variable not set. "
             "Copy backend/.env.example to backend/.env and fill it in."
         )
-    return psycopg2.connect(DATABASE_URL)
+
+    return psycopg2.connect(database_url)
 
 
 @contextmanager
