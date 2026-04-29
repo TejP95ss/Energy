@@ -10,17 +10,15 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        from database import init_db
-        init_db()
-    except Exception as e:
-        print(f"[startup] DB init skipped: {e}")
+    # DB init removed — using local file cache instead.
+    # database.py is kept for future cloud deployment.
+    print("[startup] GridOptima ready (file-cache mode)")
     yield
 
 app = FastAPI(
     title="House Energy Optimizer API",
     description="ISO New England energy scheduler",
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 
