@@ -95,7 +95,7 @@ def _fetch_iso_ne(date: datetime.date) -> dict:
     Returns {"date": iso_str, "prices": [24 floats]}
     """
     dates_to_try = [date + datetime.timedelta(days=1), date]
-
+    print(dates_to_try)
     for d in dates_to_try:
         try:
             url = (
@@ -163,18 +163,17 @@ def get_prices(live: bool = True) -> dict:
 
     if live:
         # 1. Check local cache for today or tomorrow's prices
-        for d in [today + datetime.timedelta(days=1), today]:
-            cached = _read_from_cache(d)
-            if cached:
-                return {
-                    "source": "file_cache",
-                    "node": NEMASSBOST_NODE,
-                    "date": cached["date"],
-                    "unit": "cents_per_kwh",
-                    "hours": list(range(24)),
-                    "prices": cached["prices"],
-                    "fallback": False,
-                }
+        cached = _read_from_cache(today + datetime.timedelta(days=1))
+        if cached:
+            return {
+                "source": "file_cache",
+                "node": NEMASSBOST_NODE,
+                "date": cached["date"],
+                "unit": "cents_per_kwh",
+                "hours": list(range(24)),
+                "prices": cached["prices"],
+                "fallback": False,
+            }
 
         # 2. Fetch from ISO-NE and cache locally
         try:
