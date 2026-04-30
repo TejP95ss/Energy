@@ -1,9 +1,15 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 export async function fetchPrices(live = true) {
-  const res = await fetch(`${BASE_URL}/prices?live=${live}`);
-  if (!res.ok) throw new Error("Failed to fetch prices");
-  return res.json();
+  const res = await fetch(`${BASE_URL}/prices?live=${live}`)
+  if (!res.ok) throw new Error("Failed to fetch prices")
+  return res.json()
+}
+
+export async function fetchPriceHistory(days = 7) {
+  const res = await fetch(`${BASE_URL}/prices/history?days=${days}`)
+  if (!res.ok) throw new Error("Failed to fetch price history")
+  return res.json()
 }
 
 export async function runOptimize(devices, useLivePrices = true, maxLoadKw = 10) {
@@ -15,10 +21,10 @@ export async function runOptimize(devices, useLivePrices = true, maxLoadKw = 10)
       use_live_prices: useLivePrices,
       max_load_kw: maxLoadKw,
     }),
-  });
+  })
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || "Optimization failed");
+    const err = await res.json()
+    throw new Error(err.detail || "Optimization failed")
   }
-  return res.json();
+  return res.json()
 }

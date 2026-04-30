@@ -7,11 +7,11 @@
   --bg2: #161b22;
   --bg3: #21262d;
   --border: #30363d;
-  --text: #e6edf3;
-  --text2: #8b949e;
-  --accent: #58a6ff;
-  --accent2: #3fb950;
-  --peak: #f85149;
+  --text: #ffffff;
+  --text2: #e0e0e0;
+  --accent: #1175e7;
+  --accent2: #11e12d;
+  --peak: #ee2116;
   --scheduled: #58a6ff;
   --font: 'DM Mono', 'Courier New', monospace;
   --font-sans: 'DM Sans', system-ui, sans-serif;
@@ -49,7 +49,7 @@ body {
 .app-main { flex: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; width: 100%; }
 
 .section { margin-bottom: 2rem; }
-.section-title { font-size: 0.8rem; font-family: var(--font); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); margin-bottom: 0.4rem; }
+.section-title { font-size: 0.8rem; font-family: var(--font); text-transform: uppercase; letter-spacing: 0.15em; color: var(--text); margin-bottom: 0.37rem; }
 .section-desc { font-size: 0.85rem; color: var(--text2); margin-bottom: 1rem; }
 
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
@@ -200,3 +200,93 @@ body {
   font-family: var(--font);
   padding-top: 0.25rem;
 }
+
+/* ---- Navigation ---- */
+.header-nav {
+  display: flex;
+  gap: 0.25rem;
+}
+.nav-link {
+  font-family: var(--font);
+  font-size: 0.75rem;
+  color: var(--text2);
+  text-decoration: none;
+  padding: 0.3rem 0.7rem;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.nav-link:hover { color: var(--text); }
+.nav-active {
+  color: var(--accent) !important;
+  border-color: var(--border);
+  background: var(--bg3);
+}
+
+/* ---- History page ---- */
+.history-page { display: flex; flex-direction: column; gap: 1.5rem; }
+.history-loading { color: var(--text2); font-size: 0.85rem; padding: 2rem; }
+
+.history-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.control-group { display: flex; align-items: center; gap: 0.3rem; }
+.control-label { font-size: 0.65rem; color: var(--text2); font-family: var(--font); margin-right: 0.2rem; }
+.control-btn {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-family: var(--font); font-size: 0.7rem;
+  padding: 0.2rem 0.55rem; border-radius: 4px; cursor: pointer;
+}
+.control-btn:hover { border-color: var(--accent); color: var(--accent); }
+.control-btn-active { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(88,166,255,0.08) !important; }
+.history-meta { font-size: 0.67rem; color: var(--text2); font-family: var(--font); margin-left: auto; }
+
+.history-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+@media (max-width: 768px) { .history-summary { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---- Heatmap ---- */
+.heatmap-container { overflow-x: auto; }
+.heatmap-grid {
+  display: grid;
+  gap: 2px;
+  min-width: 600px;
+}
+.heatmap-hour-label {
+  font-size: 0.50rem; color: var(--text);
+  font-family: var(--font); text-align: center;
+}
+.heatmap-date-label {
+  font-size: 0.55rem; color: var(--text);
+  font-family: var(--font);
+  display: flex; align-items: center;
+  white-space: nowrap; padding-right: 4px;
+}
+.heatmap-avg-label { color: var(--text); font-weight: 600; }
+.heatmap-cell {
+  height: 18px; border-radius: 2px; cursor: default;
+  transition: opacity 0.15s;
+}
+.heatmap-cell:hover { opacity: 0.75; }
+.heatmap-avg-cell { height: 22px; }
+
+/* ---- Line chart ---- */
+.line-chart-container { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+.line-chart-svg { width: 100%; display: block; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+/* ---- Daily bars ---- */
+.daily-bars {
+  display: flex; align-items: flex-end; gap: 4px; height: 200px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 0.75rem 0.75rem 0;
+}
+.daily-bar-col {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 2px; height: 100%; justify-content: flex-end;
+}
+.daily-bar-value { font-size: 0.5rem; color: var(--text2); font-family: var(--font); }
+.daily-bar-fill { width: 100%; border-radius: 2px 2px 0 0; min-height: 4px; }
+.daily-bar-label { font-size: 0.5rem; color: var(--text2); font-family: var(--font); padding-bottom: 4px; }
