@@ -68,6 +68,7 @@ class ScheduledDeviceOut(BaseModel):
 
 
 class OptimizeResponse(BaseModel):
+    optimizer: str
     price_source: str
     price_date: str
     price_node: str
