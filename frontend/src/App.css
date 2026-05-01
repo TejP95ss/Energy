@@ -290,3 +290,13 @@ body {
 .daily-bar-value { font-size: 0.5rem; color: var(--text2); font-family: var(--font); }
 .daily-bar-fill { width: 100%; border-radius: 2px 2px 0 0; min-height: 4px; }
 .daily-bar-label { font-size: 0.5rem; color: var(--text2); font-family: var(--font); padding-bottom: 4px; }
+
+/* LP badge */
+.results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.results-title { margin-bottom: 0 !important; }
+.optimizer-badge {
+  font-family: var(--font); font-size: 0.65rem;
+  padding: 0.2rem 0.5rem; border-radius: 4px;
+}
+.badge-lp { background: rgba(88,166,255,0.12); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+.badge-greedy { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
