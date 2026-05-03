@@ -24,7 +24,7 @@ function avg(arr) {
   return arr.reduce((a, b) => a + b, 0) / arr.length
 }
 
-export default function HistoryPage() {
+export default function HistoryPage({ node = ".Z.NEMASSBOST" }) {
   const [history, setHistory] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -34,7 +34,7 @@ export default function HistoryPage() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    fetchPriceHistory(days)
+    fetchPriceHistory(days, node)
       .then(data => {
         setHistory(data)
         setLoading(false)
@@ -121,7 +121,7 @@ export default function HistoryPage() {
           </button>
         </div>
         <span className="history-meta">
-          {entries.length} day{entries.length !== 1 ? "s" : ""} cached · {globalMin.toFixed(1)}–{globalMax.toFixed(1)} ¢/kWh range
+          {entries.length} day{entries.length !== 1 ? "s" : ""} cached · {globalMin.toFixed(1)}–{globalMax.toFixed(1)} ¢/kWh range · {history?.zone_name || node} 
         </span>
       </div>
 

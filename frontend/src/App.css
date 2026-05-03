@@ -300,3 +300,29 @@ body {
 }
 .badge-lp { background: rgba(88,166,255,0.12); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
 .badge-greedy { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+
+.zone-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.zone-label {
+  font-size: 0.65rem;
+  color: var(--text2);
+  font-family: var(--font);
+  white-space: nowrap;
+}
+.zone-select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.zone-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}

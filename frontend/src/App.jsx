@@ -5,9 +5,12 @@ import PriceChart from "./PriceChart"
 import DeviceForm from "./DeviceForm"
 import ScheduleResults from "./ScheduleResults"
 import HistoryPage from "./HistoryPage"
+import ZoneSelector from "./ZoneSelector"
 import "./App.css"
 
-function OptimizerPage({ useLive }) {
+const DEFAULT_NODE = ".Z.NEMASSBOST"
+
+function OptimizerPage({ useLive, node }) {
   const [priceData, setPriceData] = useState(null)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -17,16 +20,17 @@ function OptimizerPage({ useLive }) {
   useEffect(() => {
     setPriceData(null)
     setPriceError(null)
-    fetchPrices(useLive)
+    setResult(null)
+    fetchPrices(useLive, node)
       .then(setPriceData)
       .catch(() => setPriceError("Could not load prices — is the backend running?"))
-  }, [useLive])
+  }, [useLive, node])
 
   async function handleOptimize(devices, maxLoadKw) {
     setLoading(true)
     setError(null)
     try {
-      const data = await runOptimize(devices, useLive, maxLoadKw)
+      const data = await runOptimize(devices, useLive, maxLoadKw, node)
       setResult(data)
     } catch (e) {
       setError(e.message)
@@ -40,7 +44,9 @@ function OptimizerPage({ useLive }) {
       <section className="section">
         <h2 className="section-title">Today's Electricity Prices</h2>
         <p className="section-desc">
-          Day-ahead hourly LMPs (¢/kWh) · Node: .Z.NEMASSBOST · Highlighted bars show scheduled windows.
+          Day-ahead hourly LMPs (¢/kWh)
+          {priceData && ` · ${priceData.zone_name}`}
+          {" · "}Highlighted bars show scheduled windows.
         </p>
         {priceError ? (
           <div className="error-box">{priceError}</div>
@@ -81,6 +87,7 @@ function OptimizerPage({ useLive }) {
 
 export default function App() {
   const [useLive, setUseLive] = useState(true)
+  const [node, setNode] = useState(DEFAULT_NODE)
 
   return (
     <div className="app">
@@ -102,28 +109,29 @@ export default function App() {
             </NavLink>
           </nav>
           <div className="header-right">
+            <ZoneSelector value={node} onChange={setNode} />
             <label className="toggle-label">
               <input
                 type="checkbox"
                 checked={useLive}
-                onChange={(e) => setUseLive(e.target.checked)}
+                onChange={e => setUseLive(e.target.checked)}
               />
               Live prices
             </label>
-            <div className="header-badge">Phase 4 · History</div>
+            <div className="header-badge">Phase 5 · Multi-Zone</div>
           </div>
         </div>
       </header>
 
       <main className="app-main">
         <Routes>
-          <Route path="/" element={<OptimizerPage useLive={useLive} />} />
-          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/" element={<OptimizerPage useLive={useLive} node={node} />} />
+          <Route path="/history" element={<HistoryPage node={node} />} />
         </Routes>
       </main>
 
       <footer className="app-footer">
-        GridOptima · ISO New England day-ahead LMP · Load-aware greedy optimizer
+        GridOptima · ISO New England day-ahead LMP · LP optimizer
       </footer>
     </div>
   )

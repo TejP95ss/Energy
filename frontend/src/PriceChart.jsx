@@ -32,8 +32,8 @@ export default function PriceChart({ prices, schedule, source, date, isFallback 
       </div>
       <div className="chart-bars">
         {prices.map((p, i) => {
-          const FLOOR = 2; //change the floor and ceiling if some values go out of the chart
-          const CEIL = 10; 
+          const FLOOR = 0; //change the floor and ceiling if some values go out of the chart
+          const CEIL = 9; 
           const heightPct = ((p - FLOOR) / (CEIL - FLOOR)) * 100;
           const isScheduled = scheduledHours.has(i);
           const isPeak = p >= max * 0.8;
