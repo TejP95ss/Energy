@@ -1,24 +1,25 @@
+from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional
 from optimizer import Device, optimize
-from prices import get_prices, get_price_history
-from contextlib import asynccontextmanager
-from dotenv import load_dotenv
-load_dotenv()
+from prices import get_prices, get_price_history, get_zones, DEFAULT_NODE, ISO_NE_ZONES
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # DB init removed — using local file cache instead.
-    # database.py is kept for future cloud deployment.
     print("[startup] GridOptima ready (file-cache mode)")
     yield
+
 
 app = FastAPI(
     title="House Energy Optimizer API",
     description="ISO New England energy scheduler",
-    version="0.5.0",
+    version="0.6.0",
     lifespan=lifespan,
 )
 
@@ -52,7 +53,14 @@ class DeviceInput(BaseModel):
 class OptimizeRequest(BaseModel):
     devices: list[DeviceInput] = Field(..., min_length=1)
     use_live_prices: bool = Field(True)
-    max_load_kw: float = Field(20.0, gt=0, le=100)
+    max_load_kw: float = Field(10.0, gt=0, le=100)
+    node: str = Field(DEFAULT_NODE)
+
+    @model_validator(mode="after")
+    def valid_node(self):
+        if self.node not in ISO_NE_ZONES:
+            raise ValueError(f"Unknown node '{self.node}'")
+        return self
 
 
 class ScheduledDeviceOut(BaseModel):
@@ -72,6 +80,7 @@ class OptimizeResponse(BaseModel):
     price_source: str
     price_date: str
     price_node: str
+    price_zone_name: str
     is_fallback: bool
     prices_cents_per_kwh: list[float]
     max_load_kw: float
@@ -86,18 +95,41 @@ class OptimizeResponse(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "0.4.0"}
+    return {"status": "ok", "version": "0.6.0"}
+
+
+@app.get("/zones", summary="List all ISO-NE load zones")
+def list_zones():
+    return {
+        "default": DEFAULT_NODE,
+        "zones": [
+            {"node": node, "name": name}
+            for node, name in ISO_NE_ZONES.items()
+        ]
+    }
 
 
 @app.get("/prices")
-def fetch_prices(live: bool = Query(True)):
-    return get_prices(live=live)
+def fetch_prices(
+    live: bool = Query(True),
+    node: str = Query(DEFAULT_NODE),
+):
+    if node not in ISO_NE_ZONES:
+        raise HTTPException(status_code=400, detail=f"Unknown node '{node}'")
+    return get_prices(live=live, node=node)
+
 
 @app.get("/prices/history")
-def price_history(days: int = Query(7, ge=1, le=30)):
-    history = get_price_history(days=days)
+def price_history(
+    days: int = Query(7, ge=1, le=30),
+    node: str = Query(DEFAULT_NODE),
+):
+    if node not in ISO_NE_ZONES:
+        raise HTTPException(status_code=400, detail=f"Unknown node '{node}'")
+    history = get_price_history(days=days, node=node)
     return {
-        "node": ".Z.NEMASSBOST",
+        "node": node,
+        "zone_name": ISO_NE_ZONES[node],
         "days_requested": days,
         "days_available": len(history),
         "history": history,
@@ -106,7 +138,7 @@ def price_history(days: int = Query(7, ge=1, le=30)):
 
 @app.post("/optimize", response_model=OptimizeResponse)
 def run_optimize(req: OptimizeRequest):
-    price_data = get_prices(live=req.use_live_prices)
+    price_data = get_prices(live=req.use_live_prices, node=req.node)
     prices = price_data["prices"]
 
     devices = [
@@ -127,6 +159,7 @@ def run_optimize(req: OptimizeRequest):
         raise HTTPException(status_code=422, detail=str(e))
 
     return {
+        "price_zone_name": price_data["zone_name"],
         "price_source": price_data["source"],
         "price_date": price_data["date"],
         "price_node": price_data["node"],
