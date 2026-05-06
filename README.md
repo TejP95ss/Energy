@@ -1,4 +1,4 @@
-# GridOptima — House Energy Usage Optimizer
+# GridOptima - House Energy Usage Optimizer
 
 Full-stack energy scheduling app. Given your devices and their constraints, finds the cheapest time windows to run them using ISO New England hourly electricity prices.
 
@@ -9,7 +9,10 @@ Full-stack energy scheduling app. Given your devices and their constraints, find
 ├── backend/          # Python FastAPI + optimization engine
 │   ├── main.py       # API routes
 │   ├── optimizer.py  # Core scheduling logic
+│   ├── database.py  
+│   ├── prices.py  # Gets and stores data from ISO-NE
 │   └── requirements.txt
+├── data/          # Stores day-ahead data in json
 ├── frontend/         # React (Vite) UI
 │   ├── src/
 │   │   ├── App.jsx
@@ -17,8 +20,12 @@ Full-stack energy scheduling app. Given your devices and their constraints, find
 │   │   ├── PriceChart.jsx
 │   │   ├── DeviceForm.jsx
 │   │   └── ScheduleResults.jsx
+│   │   └── HistoryPage.jsx
+│   │   └── ZoneSelector.jsx
 │   └── package.json
 └── README.md
+
+Note: data/ folder is not commited to git so it will only be created when you first run the program for a given node.
 ```
 
 ## Quickstart
@@ -28,8 +35,8 @@ Full-stack energy scheduling app. Given your devices and their constraints, find
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload
-# → http://localhost:8000
-# → Docs: http://localhost:8000/docs
+# http://localhost:8000
+# Docs: http://localhost:8000/docs
 ```
 
 ### Frontend
@@ -37,26 +44,17 @@ uvicorn main:app --reload
 cd frontend
 npm install
 npm run dev
-# → http://localhost:5173
+# http://localhost:5173
 ```
-
-## Roadmap
-
-| Phase | Status | Description |
-|-------|--------|-------------|
-| 1 | ✅ | Core optimizer (greedy) + FastAPI + React skeleton |
-| 2 | 🔜 | Real ISO-NE price data via API |
-| 3 | 🔜 | PostgreSQL price storage |
-| 4 | 🔜 | Advanced constraints (load cap, continuous run) |
-| 5 | 🔜 | Pyomo/LP formal optimization |
-| 6 | 🔜 | Carbon optimization mode |
 
 ## API Reference
 
 ```
-GET  /health        → service status
-GET  /prices        → hourly electricity prices (¢/kWh)
-POST /optimize      → optimized device schedule
+GET  /health        service status
+GET  /prices        hourly electricity prices (¢/kWh)
+POST /optimize      optimized device schedule
+GET /prices/history see price history
+GET /zones          list all ISO-NE load zones
 ```
 
 See `http://localhost:8000/docs` for interactive Swagger docs.

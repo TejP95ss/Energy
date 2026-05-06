@@ -326,3 +326,76 @@ body {
   outline: none;
   border-color: var(--accent);
 }
+
+/* DA vs RT table */
+.dart-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.dart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  font-family: var(--font);
+}
+.dart-table th {
+  background: var(--bg3);
+  color: var(--text2);
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.dart-table td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.dart-table tr:last-child td { border-bottom: none; }
+.dart-table tr:hover td { background: var(--bg3); }
+
+.hourly-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.hourly-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  font-family: var(--font);
+}
+
+.hourly-table th {
+  background: var(--bg3);
+  color: var(--text2);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.hourly-table td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.hourly-table tr:hover td {
+  background: var(--bg3);
+}
+
+.dart-table th:not(:first-child),
+.dart-table td:not(:first-child) {
+  text-align: center;
+}
+
+.hourly-table th:not(:first-child),
+.hourly-table td:not(:first-child) {
+  text-align: center;
+}

@@ -1,6 +1,6 @@
 const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => {
   const h = i % 12 || 12;
-  return `${h}${i < 12 ? "a" : "p"}`;
+  return `${h}${i < 12 ? "am" : "pm"}`;
 });
 
 export default function PriceChart({ prices, schedule, source, date, isFallback }) {
