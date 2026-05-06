@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional
 from optimizer import Device, optimize
-from prices import get_prices, get_price_history, get_zones, DEFAULT_NODE, ISO_NE_ZONES
+from prices import get_prices, get_dart_history, get_zones, DEFAULT_NODE, ISO_NE_ZONES
 
 
 @asynccontextmanager
@@ -120,13 +120,10 @@ def fetch_prices(
 
 
 @app.get("/prices/history")
-def price_history(
-    days: int = Query(7, ge=1, le=30),
-    node: str = Query(DEFAULT_NODE),
-):
+def price_history(days: int = Query(7, ge=1, le=30), node: str = Query(DEFAULT_NODE),):
     if node not in ISO_NE_ZONES:
         raise HTTPException(status_code=400, detail=f"Unknown node '{node}'")
-    history = get_price_history(days=days, node=node)
+    history = get_dart_history(days=days, node=node)
     return {
         "node": node,
         "zone_name": ISO_NE_ZONES[node],
